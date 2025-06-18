@@ -14,6 +14,7 @@ export default function Search({ placeholder }: { placeholder: string }) {
     
     // Update the search params with the new term
     const params = new URLSearchParams(searchParams);
+    params.set('page', '1'); // Reset to the first page when the user types a new search query
     if (term) {
       params.set('search', term);
     } else {
