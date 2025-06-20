@@ -5,7 +5,15 @@ import { CreateInvoice } from '@/app/ui/invoices/buttons';
 import { lusitana } from '@/app/ui/fonts';
 import { InvoicesTableSkeleton } from '@/app/ui/skeletons';
 import { Suspense } from 'react';
-import {fetchInvoicesPages} from '@/app/lib/data';
+import { fetchInvoicesPages } from '@/app/lib/data';
+
+/*
+The page takes props `searchParams` which is a promise that resolves to an object containing
+`query` and `page`.
+When the page is loaded, it will fetch the search parameters from the URL 
+searchParams is a server component prop that allows you to access the URL search parameters.
+Then we can pass the `query` and `currentPage` to the `Table` component to display the invoices accordingly.
+*/
 
 export default async function Page(props: {
   searchParams?: Promise<{
@@ -26,7 +34,7 @@ export default async function Page(props: {
         <Search placeholder="Search invoices..." />
         <CreateInvoice />
       </div>
-       <Suspense key={query + currentPage} fallback={<InvoicesTableSkeleton />}>
+      <Suspense key={query + currentPage} fallback={<InvoicesTableSkeleton />}>
         <Table query={query} currentPage={currentPage} />
       </Suspense>
       <div className="mt-5 flex w-full justify-center">

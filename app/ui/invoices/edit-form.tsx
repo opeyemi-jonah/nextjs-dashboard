@@ -18,7 +18,13 @@ export default function EditInvoiceForm({
   invoice: InvoiceForm;
   customers: CustomerField[];
 }) {
-  const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
+  /**
+   *  pass id to the Server Action using JS bind. This will ensure that any values passed to the Server Action are encoded.
+      This is a workaround to pass the id to the Server Action, as Next.js does not support passing parameters directly to Server Actions in forms.
+      The Server Action will be called when the form is submitted, and the id will be passed as the first argument.
+      This is necessary because the form action needs to be a string, and we need to pass the id as a parameter to the Server Action.
+   */
+  const updateInvoiceWithId = updateInvoice.bind(null, invoice.id); 
   return (
     <form action={updateInvoiceWithId}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">

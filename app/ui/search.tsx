@@ -9,16 +9,30 @@ export default function Search({ placeholder }: { placeholder: string }) {
   const pathname = usePathname();
   const { replace } = useRouter();
 
+  /* 
+  Debouncing is a programming practice that limits the rate at which a function can fire. 
+  Query the database when the user has stopped typing.
+
+  In this case, we use a debounce of 500 milliseconds to wait before executing the search function.
+  This helps to reduce the number of requests made to the server while the user is typing,
+  improving performance and user experience.
+
+  The `useDebouncedCallback` hook from the `use-debounce` library is used to create a debounced version of the search function.
+  The `handleSearch` function will only be called after the user has stopped typing for 500 milliseconds. 
+  This prevents unnecessary calls to the server for every keystroke, which can be particularly useful in search functionality.
+
+  term is the search term entered by the user.
+  The `handleSearch` function updates the search parameters in the URL with the new search term and resets the page to 1.
+  */
   const handleSearch = useDebouncedCallback((term) => {
-    console.log(`Searching... ${term}`);
     
     // Update the search params with the new term
     const params = new URLSearchParams(searchParams);
     params.set('page', '1'); // Reset to the first page when the user types a new search query
     if (term) {
-      params.set('search', term);
+      params.set('query', term);
     } else {
-      params.delete('search');
+      params.delete('query'); // Remove the query parameter if the term is empty
     }
     replace(`${pathname}?${params.toString()}`);
   }, 500);
