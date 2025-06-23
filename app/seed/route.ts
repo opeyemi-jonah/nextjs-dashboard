@@ -118,11 +118,14 @@ async function seedRevenue() {
 
 export async function GET() {
   try {
-    const test_conn = await vercelsql`Select 1 as a_number;`;
+    const test_conn = await sql`Select 1;`;
     if (test_conn.length !== 0) {
-       sql_conn = vercelsql;
+       sql_conn = sql;
+       console.log('Using local database connection');
     }
-    else sql_conn = sql;
+    else {sql_conn = vercelsql;
+     console.log('Using vercel database connection');
+    }
     console.log('Database connection successful');
   }
   catch (error) {
