@@ -12,10 +12,11 @@ import { revenue } from '@/app/lib/placeholder-data';
 // https://airbnb.io/visx/
 
 export default async function RevenueChart() {
-  const revenue = await fetchRevenue();
- 
-  const chartHeight = 350;
-  const { yAxisLabels, topLabel } = generateYAxis(revenue);
+const revenue = await fetchRevenue();
+
+const chartHeight = 350;
+// Ensure revenue is of type Revenue[]
+const { yAxisLabels, topLabel } = generateYAxis(revenue as Revenue[]);
 
   if (!revenue || revenue.length === 0) {
     return <p className="mt-4 text-gray-400">No data available.</p>;

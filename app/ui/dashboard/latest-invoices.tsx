@@ -17,6 +17,38 @@ export default async function LatestInvoices() {
       <div className="flex grow flex-col justify-between rounded-xl bg-gray-50 p-4">
         { <div className="bg-white px-6">
           {latestInvoices.map((invoice, i) => {
+            // Type guard to check if invoice has full properties
+            const isFullInvoice = (inv: typeof invoice): inv is { amount: string; id: string; name: string; email: string; image_url: string } =>
+              'id' in inv && 'name' in inv && 'email' in inv && 'image_url' in inv;
+
+            if (!isFullInvoice(invoice)) {
+              // Render a fallback for invoices with only amount
+              return (
+                <div
+                  key={`amount-only-${i}`}
+                  className={clsx(
+                    'flex flex-row items-center justify-between py-4',
+                    {
+                      'border-t': i !== 0,
+                    },
+                  )}
+                >
+                  <div className="flex items-center">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold md:text-base">
+                        Unknown
+                      </p>
+                    </div>
+                  </div>
+                  <p
+                    className={`${lusitana.className} truncate text-sm font-medium md:text-base`}
+                  >
+                    {invoice.amount}
+                  </p>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={invoice.id}
