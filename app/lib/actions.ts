@@ -3,7 +3,24 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { sql } from './db';
+import { sql, vercelsql } from './db';
+import { NeonQueryFunction } from '@neondatabase/serverless';
+import { Sql } from 'postgres';
+
+let sql_conn: NeonQueryFunction<false, false> | Sql<{}>;
+
+try {
+    const test_conn = await vercelsql`Select 1 as a_number;`;
+    if (test_conn.length !== 0) {
+       sql_conn = vercelsql;
+    }
+    else sql_conn = sql;
+    console.log('Database connection successful');
+  }
+  catch (error) {
+    console.error('Database connection failed:', error);
+    throw new Error('Database connection failed');
+  }
 
 
 const FormSchema = z.object({
@@ -28,7 +45,7 @@ export async function createInvoice(formData: FormData) {
     const date = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
 
     try {
-        await sql`
+        await sql_conn`
         INSERT INTO invoices (customer_id, amount, status, date)
         VALUES (${customerId}, ${amountInCents}, ${status}, ${date});
     `;
@@ -51,7 +68,7 @@ export async function updateInvoice(id: string, formData: FormData) {
     const amountInCents = amount * 100; // Convert to cents due to JavaScript's handling of floating point numbers
 
     try {
-        await sql`
+        await sql_conn`
         UPDATE invoices
         SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
         WHERE id = ${id};
@@ -68,7 +85,7 @@ export async function updateInvoice(id: string, formData: FormData) {
 
 export async function deleteInvoice(id: string) {
     try {
-        await sql`
+        await sql_conn`
         DELETE FROM invoices
         WHERE id = ${id};
     `;

@@ -1,4 +1,6 @@
-import { sql } from './db';
+import { NeonQueryFunction } from '@neondatabase/serverless';
+import { Sql } from 'postgres';
+import { sql,vercelsql } from './db';
 import {
   CustomerField,
   CustomersTableType,
@@ -9,12 +11,26 @@ import {
 } from './definitions';
 import { formatCurrency } from './utils';
 
+let sql_conn: NeonQueryFunction<false, false> | Sql<{}>;
+
+try {
+    const test_conn = await vercelsql`Select 1 as a_number;`;
+    if (test_conn.length !== 0) {
+       sql_conn = vercelsql;
+    }
+    else sql_conn = sql;
+    console.log('Database connection successful');
+  }
+  catch (error) {
+    console.error('Database connection failed:', error);
+    throw new Error('Database connection failed');
+  }
 
 
 export async function fetchRevenue() {
   try {
     await new Promise((resolve) => setTimeout(resolve, 3000));
-    const data = await sql<Revenue[]>`SELECT * FROM revenue;`;
+    const data = await sql_conn<Revenue[]>`SELECT * FROM revenue;`;
 
     return data;
   } catch (error) {
@@ -25,7 +41,7 @@ export async function fetchRevenue() {
 
 export async function fetchLatestInvoices() {
   try {
-    const data = await sql<LatestInvoiceRaw[]>`
+    const data = await sql_conn<LatestInvoiceRaw[]>`
       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
       FROM invoices
       JOIN customers ON invoices.customer_id = customers.id
@@ -49,9 +65,9 @@ export async function fetchCardData() {
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
-    const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices`;
-    const customerCountPromise = sql`SELECT COUNT(*) FROM customers`;
-    const invoiceStatusPromise = sql`SELECT
+    const invoiceCountPromise = sql_conn`SELECT COUNT(*) FROM invoices`;
+    const customerCountPromise = sql_conn`SELECT COUNT(*) FROM customers`;
+    const invoiceStatusPromise = sql_conn`SELECT
          SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
          FROM invoices`;
@@ -87,7 +103,7 @@ export async function fetchFilteredInvoices(
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   try {
-    const invoices = await sql<InvoicesTable[]>`
+    const invoices = await sql_conn<InvoicesTable[]>`
       SELECT
         invoices.id,
         invoices.amount,
@@ -117,7 +133,7 @@ export async function fetchFilteredInvoices(
 
 export async function fetchInvoicesPages(query: string) {
   try {
-    const data = await sql`SELECT COUNT(*)
+    const data = await sql_conn`SELECT COUNT(*)
     FROM invoices
     JOIN customers ON invoices.customer_id = customers.id
     WHERE
@@ -138,7 +154,7 @@ export async function fetchInvoicesPages(query: string) {
 
 export async function fetchInvoiceById(id: string) {
   try {
-    const data = await sql<InvoiceForm[]>`
+    const data = await sql_conn<InvoiceForm[]>`
       SELECT
         invoices.id,
         invoices.customer_id,
@@ -163,7 +179,7 @@ export async function fetchInvoiceById(id: string) {
 
 export async function fetchCustomers() {
   try {
-    const customers = await sql<CustomerField[]>`
+    const customers = await sql_conn<CustomerField[]>`
       SELECT
         id,
         name
@@ -180,7 +196,7 @@ export async function fetchCustomers() {
 
 export async function fetchFilteredCustomers(query: string) {
   try {
-    const data = await sql<CustomersTableType[]>`
+    const data = await sql_conn<CustomersTableType[]>`
 		SELECT
 		  customers.id,
 		  customers.name,
