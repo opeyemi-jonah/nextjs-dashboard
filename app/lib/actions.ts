@@ -7,30 +7,43 @@ import { sql, vercelsql } from './db';
 import { NeonQueryFunction } from '@neondatabase/serverless';
 import { Sql } from 'postgres';
 
+export type State = {
+    errors?: {
+        customerId?: string[];
+        amount?: string[];
+        status?: string[];
+    };
+    message?: string | null;
+};
+
 let sql_conn: NeonQueryFunction<false, false> | Sql<{}>;
 
 // Attempt to connect to the local database first
-  try {
+try {
     const test_conn = await sql`Select 1;`;
     if (test_conn.length !== 0) {
-       sql_conn = sql;
-       console.log('Using local database connection');
+        sql_conn = sql;
+        console.log('Using local database connection');
     }
-    else {sql_conn = vercelsql;
-     console.log('Using vercel database connection');
+    else {
+        sql_conn = vercelsql;
+        console.log('Using vercel database connection');
     }
     console.log('Database connection successful');
-  }
-  catch (error) {
+}
+catch (error) {
     console.error('Database connection failed:', error);
     throw new Error('Database connection failed');
-  }
+}
+
 
 const FormSchema = z.object({
     id: z.string(),
-    customerId: z.string(),
-    amount: z.coerce.number(),
-    status: z.enum(['pending', 'paid']),
+    customerId: z.string({
+        invalid_type_error: 'Please select a customer.',
+    }),
+    amount: z.coerce.number().gt(0, { message: 'Please enter an amount greater than $0.' }),
+    status: z.enum(['pending', 'paid'], { invalid_type_error: 'Please select an invoice status.', }),
     date: z.string(),
 
 });
@@ -38,24 +51,37 @@ const FormSchema = z.object({
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
 
-export async function createInvoice(formData: FormData) {
-    const { customerId, amount, status } = CreateInvoice.parse({
+export async function createInvoice(prevState: State, formData: FormData) {
+    const validatedFields = CreateInvoice.safeParse({
         customerId: formData.get('customerId'),
         amount: formData.get('amount'),
         status: formData.get('status'),
     });
-    const amountInCents = amount * 100; // Convert to cents due to JavaScript's handling of floating point numbers
-    const date = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
 
-    try {
-        await sql_conn`
-        INSERT INTO invoices (customer_id, amount, status, date)
-        VALUES (${customerId}, ${amountInCents}, ${status}, ${date});
-    `;
+    // If form validation fails, return errors early. Otherwise, continue.
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'Missing Fields. Failed to Create Invoice.',
+        };
     }
-    catch (error) {
-        console.error('Error creating invoice:', error);
-        throw new Error('Failed to create invoice');
+
+    // Prepare data for insertion into the database
+    const { customerId, amount, status } = validatedFields.data;
+    const amountInCents = amount * 100;
+    const date = new Date().toISOString().split('T')[0];
+
+    // Insert data into the database
+    try {
+        await sql`
+      INSERT INTO invoices (customer_id, amount, status, date)
+      VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+    `;
+    } catch (error) {
+        // If a database error occurs, return a more specific error.
+        return {
+            message: 'Database Error: Failed to Create Invoice.',
+        };
     }
 
     revalidatePath('/dashboard/invoices'); // Revalidate the invoices page to reflect the new invoice after database insertion

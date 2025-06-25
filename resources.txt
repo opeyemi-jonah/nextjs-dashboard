@@ -3,3 +3,5 @@ https://chartscss.org/
 
 https://dev.to/anjelica_mf/css-specificity-code-review-and-the-bug-that-broke-my-brain-4e59?
 https://artdrivethru.com/css-formatter
+
+https://web.dev/learn/accessibility/
