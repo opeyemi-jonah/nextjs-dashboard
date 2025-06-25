@@ -5,3 +5,5 @@ https://dev.to/anjelica_mf/css-specificity-code-review-and-the-bug-that-broke-my
 https://artdrivethru.com/css-formatter
 
 https://web.dev/learn/accessibility/
+
+https://www.codu.co/articles/zod-parse-versus-safeparse-what-s-the-difference-7t_tjfne

@@ -1,5 +1,7 @@
 'use server';
 
+import { signIn } from '@/app/auth';
+import { AuthError } from 'next-auth';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -35,7 +37,6 @@ catch (error) {
     console.error('Database connection failed:', error);
     throw new Error('Database connection failed');
 }
-
 
 const FormSchema = z.object({
     id: z.string(),
@@ -88,13 +89,13 @@ export async function createInvoice(prevState: State, formData: FormData) {
     redirect('/dashboard/invoices'); // Redirect to the invoices page after successful creation
 }
 
-export async function updateInvoice(id: string, prevState: State,formData: FormData) {
+export async function updateInvoice(id: string, prevState: State, formData: FormData) {
     const validatedFields = UpdateInvoice.safeParse({
         customerId: formData.get('customerId'),
         amount: formData.get('amount'),
         status: formData.get('status'),
     });
-    
+
     // If form validation fails, return errors early. Otherwise, continue.
     if (!validatedFields.success) {
         return {
@@ -102,7 +103,7 @@ export async function updateInvoice(id: string, prevState: State,formData: FormD
             message: 'Missing Fields. Failed to Update Invoice.',
         };
     }
-    
+
     //Prepare data for updating the invoice
     const { customerId, amount, status } = validatedFields.data;
 
@@ -138,4 +139,23 @@ export async function deleteInvoice(id: string) {
 
     revalidatePath('/dashboard/invoices'); // Revalidate the invoices page to reflect the deletion after database operation
     redirect('/dashboard/invoices'); // Redirect to the invoices page after successful deletion
+}
+
+export async function authenticate(
+    prevState: string | undefined,
+    formData: FormData,
+) {
+    try {
+        await signIn('credentials', formData);
+    } catch (error: unknown) {
+        if (error instanceof AuthError) {
+            switch (error.type) {
+                case 'CredentialsSignin':
+                    return 'Invalid credentials.';
+                default:
+                    return 'Something went wrong.';
+            }
+        }
+        throw error;
+    }
 }
