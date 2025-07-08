@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import { invoices, customers, revenue, users } from '../lib/placeholder-data';
 import { sql, vercelsql } from '../lib/db';
-import test from 'node:test';
+
 
 let sql_conn;
 

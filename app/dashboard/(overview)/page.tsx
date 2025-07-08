@@ -9,6 +9,13 @@ import {
   LatestInvoicesSkeleton,
   CardsSkeleton,
 } from '@/app/ui/skeletons';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+  description: 'Overview of your account',
+  keywords: 'dashboard, overview, analytics',
+};
 
 export default async function Page() {
 
